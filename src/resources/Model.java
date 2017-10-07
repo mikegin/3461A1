@@ -24,26 +24,31 @@ public class Model extends Observable {
 	public static final int END_STATE = 4;
 
 	private PrintStream myOut = System.out;
+	
+	private String promptMsg;
+	private int promptSize;
+	private int promptCount;
 
-	private String[] prompts = { "Press the button", "Press the button", "Press the button", "Press the button",
-			"Press the button", "Press the button" };
-
-	private String endMsg = "Task Complete.";
-	private String initMsg = "Instructions go here.  Button will appear after a delay.  Press to continue.";
-
-	private int currPromptIdx;
+	private String endMsg;
+	private String initMsg;
 
 	private int currentState;
 
 	private long startTimestamp;
 	private long stopTimestamp;
+	
+	private int errorCount = 0;
 
 	/**
 	 * Create an instance of this model. The iterator over the prompts has not
 	 * been initialized.
 	 */
 	public Model() {
-		currPromptIdx = 0;
+		promptSize = 6;
+		promptCount = 1;
+		promptMsg = "Press the button";
+		endMsg = "Task Complete.";
+		initMsg = "Instructions go here.  Button will appear after a delay.  Press to continue.";
 		this.setState(Model.STATE_UNASSIGNED);
 	}
 
@@ -61,8 +66,16 @@ public class Model extends Observable {
 	/**
 	 * @return the prompt that is current in the iteration.
 	 */
-	public String getCurrentPrompt() {
-		return prompts[currPromptIdx];
+	public String getCurrentPromptMessage() {
+		return promptMsg;
+	}
+	
+	/**
+	 * Sets the prompt message.
+	 * @param message
+	 */
+	public void setCurrentPromptMessage(String message) {
+		promptMsg = message;
 	}
 
 	/**
@@ -72,7 +85,7 @@ public class Model extends Observable {
 	 *         fraction will be less than or equal to the denominator.
 	 */
 	public String getPromptRelativePositionString() {
-		return "(Prompt " + (currPromptIdx + 1) + "/" + (prompts.length) + "): ";
+		return "(Prompt " + promptCount + "/" + promptSize + "): ";
 	}
 
 	/**
@@ -80,8 +93,8 @@ public class Model extends Observable {
 	 * iterator has not reached past the end of the set of prompts.
 	 */
 	public void setPromptToNext() {
-		currPromptIdx++;
-		modelNotify(currPromptIdx);
+		promptCount++;
+		modelNotify(promptCount);
 	}
 
 	/**
@@ -89,7 +102,7 @@ public class Model extends Observable {
 	 *         prompts.
 	 */
 	public boolean isPromptsRemaining() {
-		return currPromptIdx < prompts.length - 1;
+		return promptCount < promptSize;
 	}
 
 	/**
@@ -100,7 +113,7 @@ public class Model extends Observable {
 	 * recordStartTimeStamp()
 	 */
 	public void recordDuration() {
-		myOut.println(getCurrentPrompt() + "\tTime Elapsed (msec): " + (stopTimestamp - startTimestamp));
+		myOut.println(getCurrentPromptMessage() + "\tTime Elapsed (msec): " + (stopTimestamp - startTimestamp));
 	}
 
 	/**
@@ -136,8 +149,8 @@ public class Model extends Observable {
 	 * Initiates the iterator over the prompts.
 	 */
 	public void setPromptToFirst() {
-		currPromptIdx = 0;
-		modelNotify(currPromptIdx);
+		promptCount = 1;
+		modelNotify(promptCount);
 	}
 
 	/**
@@ -166,5 +179,26 @@ public class Model extends Observable {
 	 */
 	public void recordStartTimeStamp(int t) {
 		startTimestamp = t + System.currentTimeMillis();
+	}
+	
+	/**
+	 * @return the current number of errors
+	 */
+	public int getErrorCount() {
+		return errorCount;
+	}
+	
+	/**
+	 * Increment error count
+	 */
+	public void incrementErrorCount() {
+		errorCount++;
+	}
+	
+	/**
+	 * Reset the error count
+	 */
+	public void resetErrorCount() {
+		errorCount = 0;
 	}
 }

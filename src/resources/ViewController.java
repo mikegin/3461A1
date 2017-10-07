@@ -51,7 +51,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 
 	private JPanel infoPanel;
 	private JPanel widgetPanel;
-	private JPanel colorPanel;
+	private JPanelWithSquare colorPanel;
 
 	private JLabel theLabel;
 	private JButton theButton;
@@ -83,16 +83,14 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 		 */
 		infoPanel = new JPanel();
 		widgetPanel = new JPanel();
-		colorPanel = new JPanel();
 		infoPanel.setBackground(Color.WHITE);
 		widgetPanel.setBackground(Color.WHITE);
-		colorPanel.setBackground(Color.GRAY);
 		
 		// the default Layout Manager for JPanel is FlowLayout. Make choice of
 		// Layout Manager explicit here
 		infoPanel.setLayout(new BorderLayout());
 		widgetPanel.setLayout(new BorderLayout());
-		colorPanel.setLayout(new BorderLayout());
+		
 		this.getContentPane().setLayout(new BorderLayout());
 
 		theLabel = new JLabel();
@@ -106,7 +104,6 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 
 		this.getContentPane().add(infoPanel, BorderLayout.NORTH);
 		this.getContentPane().add(widgetPanel, BorderLayout.SOUTH);
-		this.getContentPane().add(colorPanel, BorderLayout.CENTER);
 
 		// here we install this object (ActionListener) on the button so that we
 		// may detect user actions that may be dispatched from it.
@@ -153,14 +150,18 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 		} else if (theModel.getCurrentState() == Model.ELICIT_STATE) {
 			theButton.setText("Button");
 			theButton.setEnabled(false);
-			theModel.recordStartTimeStamp();
-			theLabel.setText(theModel.getPromptRelativePositionString() + theModel.getCurrentPrompt());
+			
+			theModel.recordStartTimeStamp(promptDisplayDuration);
+			theLabel.setText(theModel.getPromptRelativePositionString() + theModel.getCurrentPromptMessage());
 			displayWorker = this.createWorkerDelayedEnabledButton(promptDisplayDuration);
 			displayWorker.execute();
 		} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
 			theButton.setText("Button");
 			theButton.setEnabled(true);
-			colorPanel.setBackground(Color.BLUE);
+			theLabel.setText(theModel.getPromptRelativePositionString() + theModel.getCurrentPromptMessage());
+			colorPanel.setSqColor(Color.BLUE);
+			colorPanel.repaint();
+			
 			int delay = (int)Math.random()*3000 + 1000;//random delay between one and 3 seconds
 			theModel.recordStartTimeStamp(delay);
 			displayWorker = this.createWorkerDelayedColorChange(delay);
@@ -193,11 +194,15 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 					theModel.setState(Model.ELICIT_STATE);
 				} else {
 					System.out.println("==================================");
+					setupTest2();
 					theModel.setPromptToFirst();
+					theModel.setCurrentPromptMessage("Press the button on color change");
 					theModel.setState(Model.ELICIT_STATE2);
 				}
 			} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
-				if(colorPanel.getBackground().equals(Color.BLUE)){}//Do Nothing
+				if(colorPanel.getSqColor().equals(Color.BLUE)){
+					theModel.incrementErrorCount();
+				}
 				else{
 					theModel.recordStopTimeStamp();
 					theModel.recordDuration();
@@ -205,6 +210,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 						theModel.setPromptToNext();
 						theModel.setState(Model.ELICIT_STATE2);
 					} else {
+						System.out.println("Error count: " + theModel.getErrorCount());
 						theModel.setState(Model.END_STATE);
 					}
 				}
@@ -215,6 +221,14 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 			// myOut.println("Button press");
 		}
 
+	}
+	
+	private void setupTest2() {
+		colorPanel = new JPanelWithSquare();
+		colorPanel.setSqColor(Color.BLUE);
+		colorPanel.setBackground(Color.GRAY);
+		colorPanel.setLayout(new BorderLayout());
+		this.getContentPane().add(colorPanel, BorderLayout.CENTER);
 	}
 
 	/**
@@ -238,7 +252,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 	}
 	
 	/**
-	 * Launch thread to wait and then enable button
+	 * Launch thread to wait and then change the color of the square in the color panel
 	 * 
 	 * @return
 	 */
@@ -251,10 +265,41 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 				} catch (InterruptedException e) {
 					myOut.println("Error Occurred.");
 				}
-				colorPanel.setBackground(Color.RED);
+				colorPanel.setSqColor(Color.RED);
+				colorPanel.repaint();
 				return null;
 			}
 		};
+	}
+	
+	class JPanelWithSquare extends JPanel {
+		private static final long serialVersionUID = 1L;
+		int height = 30;//30 pixels high.
+	    int width = 30;//30 pixels wide.
+	    Color sqColor = Color.BLUE;
+	    
+	    public Color getSqColor() {
+	    	return sqColor;
+	    }
+	    
+	    public void setSqColor(Color color) {
+	    	sqColor = color;
+	    }
+
+	    @Override
+	    protected void paintComponent(Graphics g) {
+	    	super.paintComponent(g);
+	    	int verticalCenter = this.getHeight()/2;
+	    	int horizontalCenter = this.getWidth()/2;
+	    	
+	    	int topLeftSquareCornerY = verticalCenter - (height/2);
+	    	int topLeftSquareCornerX = horizontalCenter - (width/2);
+	    	
+	    	g.setColor(sqColor);
+	    	g.fillRect(topLeftSquareCornerX, topLeftSquareCornerY, width, height);
+	    	
+	      
+	    }
 	}
 
 }
