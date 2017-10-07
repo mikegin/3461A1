@@ -17,10 +17,11 @@ import java.util.Observable;
  */
 public class Model extends Observable {
 
-	public static final int STATE_UNASSIGNED = 3;
-	public static final int INIT_STATE = 0;
-	public static final int ELICIT_STATE = 1;
-	public static final int END_STATE = 2;
+	public static final int STATE_UNASSIGNED = 0;
+	public static final int INIT_STATE = 1;
+	public static final int ELICIT_STATE = 2;
+	public static final int ELICIT_STATE2 = 3;
+	public static final int END_STATE = 4;
 
 	private PrintStream myOut = System.out;
 
@@ -147,16 +148,23 @@ public class Model extends Observable {
 	}
 
 	/**
-	 * Tell this model to start recording elapsed time.
+	 * Tell this model to stop recording elapsed time.
 	 */
 	public void recordStopTimeStamp() {
 		stopTimestamp = System.currentTimeMillis();
 	}
 
 	/**
-	 * Tell this model to stop recording elapsed time.
+	 * Tell this model to start recording elapsed time.
 	 */
 	public void recordStartTimeStamp() {
 		startTimestamp = System.currentTimeMillis();
+	}
+	
+	/**
+	 * Tell this model to start recording elapsed time in 't' amount of time.
+	 */
+	public void recordStartTimeStamp(int t) {
+		startTimestamp = t + System.currentTimeMillis();
 	}
 }

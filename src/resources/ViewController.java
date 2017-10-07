@@ -3,9 +3,13 @@ package resources;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
 import java.util.Observable;
 import java.util.Observer;
@@ -34,7 +38,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 
 	private PrintStream myOut = System.out;
 
-	private int promptDisplayDuration = 3000; // in msec
+	private int promptDisplayDuration = 500; // in msec
 
 	private SwingWorker<Void, Void> displayWorker;
 
@@ -47,6 +51,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 
 	private JPanel infoPanel;
 	private JPanel widgetPanel;
+	private JPanel colorPanel;
 
 	private JLabel theLabel;
 	private JButton theButton;
@@ -78,12 +83,16 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 		 */
 		infoPanel = new JPanel();
 		widgetPanel = new JPanel();
+		colorPanel = new JPanel();
 		infoPanel.setBackground(Color.WHITE);
 		widgetPanel.setBackground(Color.WHITE);
+		colorPanel.setBackground(Color.GRAY);
+		
 		// the default Layout Manager for JPanel is FlowLayout. Make choice of
 		// Layout Manager explicit here
 		infoPanel.setLayout(new BorderLayout());
 		widgetPanel.setLayout(new BorderLayout());
+		colorPanel.setLayout(new BorderLayout());
 		this.getContentPane().setLayout(new BorderLayout());
 
 		theLabel = new JLabel();
@@ -97,6 +106,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 
 		this.getContentPane().add(infoPanel, BorderLayout.NORTH);
 		this.getContentPane().add(widgetPanel, BorderLayout.SOUTH);
+		this.getContentPane().add(colorPanel, BorderLayout.CENTER);
 
 		// here we install this object (ActionListener) on the button so that we
 		// may detect user actions that may be dispatched from it.
@@ -147,6 +157,14 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 			theLabel.setText(theModel.getPromptRelativePositionString() + theModel.getCurrentPrompt());
 			displayWorker = this.createWorkerDelayedEnabledButton(promptDisplayDuration);
 			displayWorker.execute();
+		} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
+			theButton.setText("Button");
+			theButton.setEnabled(true);
+			colorPanel.setBackground(Color.BLUE);
+			int delay = (int)Math.random()*3000 + 1000;//random delay between one and 3 seconds
+			theModel.recordStartTimeStamp(delay);
+			displayWorker = this.createWorkerDelayedColorChange(delay);
+			displayWorker.execute();
 		} else if (theModel.getCurrentState() == Model.END_STATE) {
 			theLabel.setText(theModel.getEndMsg());
 			theButton.setText("");
@@ -174,7 +192,21 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 					theModel.setPromptToNext();
 					theModel.setState(Model.ELICIT_STATE);
 				} else {
-					theModel.setState(Model.END_STATE);
+					System.out.println("==================================");
+					theModel.setPromptToFirst();
+					theModel.setState(Model.ELICIT_STATE2);
+				}
+			} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
+				if(colorPanel.getBackground().equals(Color.BLUE)){}//Do Nothing
+				else{
+					theModel.recordStopTimeStamp();
+					theModel.recordDuration();
+					if (theModel.isPromptsRemaining()) {
+						theModel.setPromptToNext();
+						theModel.setState(Model.ELICIT_STATE2);
+					} else {
+						theModel.setState(Model.END_STATE);
+					}
 				}
 			} else if (theModel.getCurrentState() == Model.END_STATE) {
 				// control should never arrive here. When in end state, button
@@ -200,6 +232,26 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 					myOut.println("Error Occurred.");
 				}
 				theButton.setEnabled(true);
+				return null;
+			}
+		};
+	}
+	
+	/**
+	 * Launch thread to wait and then enable button
+	 * 
+	 * @return
+	 */
+	private SwingWorker<Void, Void> createWorkerDelayedColorChange(final int delayInMSec) {
+		return new SwingWorker<Void, Void>() {
+			@Override
+			protected Void doInBackground() {
+				try {
+					Thread.sleep(delayInMSec);
+				} catch (InterruptedException e) {
+					myOut.println("Error Occurred.");
+				}
+				colorPanel.setBackground(Color.RED);
 				return null;
 			}
 		};
