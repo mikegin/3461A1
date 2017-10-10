@@ -148,16 +148,16 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 			displayWorker = this.createWorkerDelayedEnabledButton(promptDisplayDuration);
 			displayWorker.execute();
 		} else if (theModel.getCurrentState() == Model.ELICIT_STATE) {
-			theButton.setText("Button");
-			theButton.setEnabled(false);
-			
-			theModel.recordStartTimeStamp(promptDisplayDuration);
+			theButton.setText("Wait");
+			theButton.setEnabled(true);
 			theLabel.setText(theModel.getPromptRelativePositionString() + theModel.getCurrentPromptMessage());
-			displayWorker = this.createWorkerDelayedEnabledButton(promptDisplayDuration);
+			
+			int delay = (int)Math.random()*3000 + 1000;//random delay between one and 3 seconds
+			theModel.recordStartTimeStamp(delay);
+			displayWorker = this.createWorkerDelayedChangedText(delay);
 			displayWorker.execute();
 		} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
 			theButton.setText("Button");
-			theButton.setEnabled(true);
 			theLabel.setText(theModel.getPromptRelativePositionString() + theModel.getCurrentPromptMessage());
 			colorPanel.setSqColor(Color.BLUE);
 			colorPanel.repaint();
@@ -187,17 +187,24 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 				theModel.setPromptToFirst();
 				theModel.setState(Model.ELICIT_STATE);
 			} else if (theModel.getCurrentState() == Model.ELICIT_STATE) {
-				theModel.recordStopTimeStamp();
-				theModel.recordDuration();
-				if (theModel.isPromptsRemaining()) {
-					theModel.setPromptToNext();
-					theModel.setState(Model.ELICIT_STATE);
+				if(theButton.getText().equals("Wait")) {
+					theModel.incrementErrorCount();
 				} else {
-					System.out.println("==================================");
-					setupTest2();
-					theModel.setPromptToFirst();
-					theModel.setCurrentPromptMessage("Press the button on color change");
-					theModel.setState(Model.ELICIT_STATE2);
+					theModel.recordStopTimeStamp();
+					theModel.recordDuration();
+					if (theModel.isPromptsRemaining()) {
+						theModel.setPromptToNext();
+						theModel.setState(Model.ELICIT_STATE);
+					} else {
+						System.out.println("Error count: " + theModel.getErrorCount());
+						System.out.println("==================================");
+						
+						setupTest2();
+						theModel.resetErrorCount();
+						theModel.setPromptToFirst();
+						theModel.setCurrentPromptMessage("Press the button on color change");
+						theModel.setState(Model.ELICIT_STATE2);
+					}
 				}
 			} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
 				if(colorPanel.getSqColor().equals(Color.BLUE)){
@@ -252,6 +259,26 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 	}
 	
 	/**
+	 * Launch thread to wait and then change button text
+	 * 
+	 * @return
+	 */
+	private SwingWorker<Void, Void> createWorkerDelayedChangedText(final int delayInMSec) {
+		return new SwingWorker<Void, Void>() {
+			@Override
+			protected Void doInBackground() {
+				try {
+					Thread.sleep(delayInMSec);
+				} catch (InterruptedException e) {
+					myOut.println("Error Occurred.");
+				}
+				theButton.setText("Press Now");
+				return null;
+			}
+		};
+	}
+	
+	/**
 	 * Launch thread to wait and then change the color of the square in the color panel
 	 * 
 	 * @return
@@ -267,6 +294,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 				}
 				colorPanel.setSqColor(Color.RED);
 				colorPanel.repaint();
+				theButton.setText("Button");
 				return null;
 			}
 		};
