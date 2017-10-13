@@ -4,12 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
 import java.util.Observable;
 import java.util.Observer;
@@ -29,7 +26,7 @@ import javax.swing.SwingWorker;
  * initializes with an active button labeled "Press to start". This action
  * launches the first state change to the Model.
  * 
- * @author mb
+ * @author Mikhail Gindin
  *
  */
 public class ViewController extends JFrame implements Observer, ActionListener {
@@ -141,6 +138,7 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 		// the model's state has updated
 		// myOut.println("model observer detected change: " +
 		// theModel.getCurrentState());
+		int delay = (int)(Math.random()*5000 + 1000);//random delay between 1 and 5 seconds
 		if (theModel.getCurrentState() == Model.INIT_STATE) {
 			theLabel.setText(theModel.getInitMsg());
 			theButton.setText("Understood");
@@ -152,8 +150,9 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 			theButton.setEnabled(true);
 			theLabel.setText(theModel.getPromptRelativePositionString() + theModel.getCurrentPromptMessage());
 			
-			int delay = (int)Math.random()*3000 + 1000;//random delay between one and 3 seconds
-			theModel.recordStartTimeStamp(delay);
+			
+			//System.out.println("DELAY: " + delay);
+			theModel.recordStartTimeStamp(delay);//record start time once the button changes text
 			displayWorker = this.createWorkerDelayedChangedText(delay);
 			displayWorker.execute();
 		} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
@@ -162,8 +161,8 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 			colorPanel.setSqColor(Color.BLUE);
 			colorPanel.repaint();
 			
-			int delay = (int)Math.random()*3000 + 1000;//random delay between one and 3 seconds
-			theModel.recordStartTimeStamp(delay);
+			
+			theModel.recordStartTimeStamp(delay);//record the start time once the square color changes
 			displayWorker = this.createWorkerDelayedColorChange(delay);
 			displayWorker.execute();
 		} else if (theModel.getCurrentState() == Model.END_STATE) {
@@ -186,37 +185,34 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 			} else if (theModel.getCurrentState() == Model.INIT_STATE) {
 				theModel.setPromptToFirst();
 				theModel.setState(Model.ELICIT_STATE);
-			} else if (theModel.getCurrentState() == Model.ELICIT_STATE) {
-				if(theButton.getText().equals("Wait")) {
+			
+			} else if (theModel.getCurrentState() == Model.ELICIT_STATE) { //first test
+				if(theButton.getText().equals("Wait")) { //invalid click
 					theModel.incrementErrorCount();
-				} else {
+				} else {//valid click
 					theModel.recordStopTimeStamp();
 					theModel.recordDuration();
 					if (theModel.isPromptsRemaining()) {
 						theModel.setPromptToNext();
 						theModel.setState(Model.ELICIT_STATE);
-					} else {
+					} else {//end of first test, setup test2
 						System.out.println("Error count: " + theModel.getErrorCount());
 						System.out.println("==================================");
 						
 						setupTest2();
-						theModel.resetErrorCount();
-						theModel.setPromptToFirst();
-						theModel.setCurrentPromptMessage("Press the button on color change");
-						theModel.setState(Model.ELICIT_STATE2);
 					}
 				}
-			} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {
-				if(colorPanel.getSqColor().equals(Color.BLUE)){
+			} else if (theModel.getCurrentState() == Model.ELICIT_STATE2) {//second test
+				if(colorPanel.getSqColor().equals(Color.BLUE)){//invalid click
 					theModel.incrementErrorCount();
 				}
-				else{
+				else{//valid click
 					theModel.recordStopTimeStamp();
 					theModel.recordDuration();
 					if (theModel.isPromptsRemaining()) {
 						theModel.setPromptToNext();
 						theModel.setState(Model.ELICIT_STATE2);
-					} else {
+					} else {//end of test 2
 						System.out.println("Error count: " + theModel.getErrorCount());
 						theModel.setState(Model.END_STATE);
 					}
@@ -230,12 +226,20 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 
 	}
 	
+	/**
+	 * Method invoked to set up the second test
+	 */
 	private void setupTest2() {
 		colorPanel = new JPanelWithSquare();
 		colorPanel.setSqColor(Color.BLUE);
 		colorPanel.setBackground(Color.GRAY);
 		colorPanel.setLayout(new BorderLayout());
 		this.getContentPane().add(colorPanel, BorderLayout.CENTER);
+		
+		theModel.resetErrorCount();
+		theModel.setPromptToFirst();
+		theModel.setCurrentPromptMessage("Press the button on color change.");
+		theModel.setState(Model.ELICIT_STATE2);
 	}
 
 	/**
@@ -294,17 +298,19 @@ public class ViewController extends JFrame implements Observer, ActionListener {
 				}
 				colorPanel.setSqColor(Color.RED);
 				colorPanel.repaint();
-				theButton.setText("Button");
 				return null;
 			}
 		};
 	}
 	
+	/**
+	 * Anonymous inner class defining a new JPanel with a centered, colored square
+	 */
 	class JPanelWithSquare extends JPanel {
 		private static final long serialVersionUID = 1L;
-		int height = 30;//30 pixels high.
-	    int width = 30;//30 pixels wide.
-	    Color sqColor = Color.BLUE;
+		private int height = 30;//30 pixels high.
+	    private int width = 30;//30 pixels wide.
+	    private Color sqColor = Color.BLUE;
 	    
 	    public Color getSqColor() {
 	    	return sqColor;

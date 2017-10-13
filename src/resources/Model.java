@@ -4,15 +4,13 @@ import java.io.PrintStream;
 import java.util.Observable;
 
 /**
- * This class encapsulates the data model of a very simple data collection
- * protocol. The model has three possible states: init state (has an associated
- * sting containing initial instructions), elicitation state (has an associated
- * ordered set of prompts), and end state (has an associated final message).
- * This class provides services for iterating over the ordered set of prompts.
+ * The model has three possible states: init state (has an associated
+ * sting containing initial instructions), elicitation state 1(the first experiment test), 
+ * elicitation state 2 (the second experiment test), and end state (has an associated final message).
  * 
  * This Model is an Observable.
  * 
- * @author mb
+ * @author Mikhail Gindin
  *
  */
 public class Model extends Observable {
@@ -40,13 +38,12 @@ public class Model extends Observable {
 	private int errorCount = 0;
 
 	/**
-	 * Create an instance of this model. The iterator over the prompts has not
-	 * been initialized.
+	 * Create an instance of this model.
 	 */
 	public Model() {
 		promptSize = 6;
 		promptCount = 1;
-		promptMsg = "Press the button";
+		promptMsg = "Press the button when it tells you to.";
 		endMsg = "Task Complete.";
 		initMsg = "Instructions go here.  Button will appear after a delay.  Press to continue.";
 		this.setState(Model.STATE_UNASSIGNED);
@@ -94,7 +91,6 @@ public class Model extends Observable {
 	 */
 	public void setPromptToNext() {
 		promptCount++;
-		modelNotify(promptCount);
 	}
 
 	/**
@@ -124,7 +120,6 @@ public class Model extends Observable {
 	 *            Mutate the current state of this model.
 	 */
 	public void setState(int modelState) {
-		// currentState = 9;
 		currentState = modelState;
 		modelNotify(currentState);
 	}
@@ -150,7 +145,6 @@ public class Model extends Observable {
 	 */
 	public void setPromptToFirst() {
 		promptCount = 1;
-		modelNotify(promptCount);
 	}
 
 	/**

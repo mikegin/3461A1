@@ -1,10 +1,13 @@
 import resources.AppRunnable;
 
 /**
- * This class encapsulates a basic app, which is a very simple newsfeed
- * displayer.
+ * This class encapsulates a basic app, which is a simple experiment used to measure
+ * user speed and accuracy of interaction with a mouse directly vs indirectly. The experiment
+ * consists of two tests. The first one that involves the user pressing a button once text on 
+ * the button changes. The other involves the user pressing a button once a separate colored
+ * box changes color. Speed of the click and number of errors are recorded.
  * 
- * @author mb
+ * @author Mikhail Gindin
  *
  */
 public class ApplicationDriver {
